@@ -9,28 +9,27 @@ url = "https://groupaccount.tenpay.com/fcgi-bin/grp_commentlist_query.fcgi"
 headers = {
     "Host": 'groupaccount.tenpay.com',
     "user-agent":
-        'Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.5(0x17000523) NetType/WIFI Language/zh_CN'
+        "自己填一个你的用户代理，可以加代理池和IP池防止被ban但是我懒得加也没有那么多手机的用户代理可以用，暂时来讲问题不大"
     ,
     "Accept": '*/*',
     'refer':
         "https://servicewechat.com/wxcf8e5b328359cb7a/194/page-frame.html",
     'Accept-Language': 'zh-ch',
-    # 'Cookie':'grp_qlskey=v0ae788b1105d71d67af2a21d92e0fd6; grp_qluin=3e001709a2d5be5c7631d28a37c107b5',
 }
 cookies = {
-    'grp_qluin': '05b8205814986aae4782657e03cc071b',
-    'grp_qlskey': 'v0ae789cc105d720d75fd79d4f640594',
+    'grp_qluin': '填入你的cookie',
+    'grp_qlskey': '填入你的cookie',
 }
 # 使用cookies登陆，不登陆无法查看粉丝圈（所以还得先用这个账号手动加入粉丝圈）咱也不知道这个cookies的过期时间是多少...
 data = {
-    'guid': 'kqptEkGo0100001440036668',  # 指向这个集资项目的集资情况页面
+    'guid': '填入目标集资项目的guid',  # 指向这个集资项目的集资情况页面
     'offset': '0',
-    'limit': '10',  # response 的集资金额条数，limit可调，默认10条
+    'limit': '10',  # response 的集资金额条数，limit可修改，默认10条
     'flag': '0',
 }
 u = "https://groupaccount.tenpay.com/fcgi-bin/grp_project_qry_info.fcgi"
 datatotal = {
-    "project_id": "7TAnLHtb0101440037495668",
+    "project_id": "填入集资项目的主页的project_id",
 }
 
 
@@ -94,11 +93,12 @@ def block():
     cur = curent(u, headers, cookies, datatotal)
     message = broadcast(queue, cur)
     if queue != []:
-        bot.send_group_msg(group_id=477218146, message=message)
-
+        bot.send_group_msg(group_id=477218146, message=message) # BEJ-48 黄恩茹应援群：477218146！欢迎加入！👏🏻
+        # group_id填上想要播报的应援群群号，挂在在酷Q上的机器人一定要先加群
+        # 如果想播报给个人可以send_private_msg 更多用法参见CoolQHTTP的官网API说明
 
 if __name__ == '__main__':
-    lasttime = '2019-09-06 12:30:00'  # initial lasttime
+    lasttime = '2019-09-06 12:30:00'  # initial lasttime 
     bot = CQHttp(api_root='http://127.0.0.1:5700/', access_token='lovely|teemo', secret='lovely|teemo')
     second = 60  # 60s扫一次集资情况
     # second=3600*2 # 2h扫一次
