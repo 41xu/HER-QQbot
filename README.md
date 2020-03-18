@@ -8,7 +8,13 @@ Some function based on CoolQ bot, for SNH48 Group.
 func list:
 
 - [x] 腾讯小经费集资播报
-- [ ] 桃叭监控
+- [x] 桃叭监控
+
+## 桃叭监控
+
+见`taoba/getList.py`
+
+实现机器人播报
 
 ## moniter.py
 

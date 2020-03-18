@@ -3,6 +3,9 @@ import zlib
 import json
 import base64
 import time
+import copy
+from cqhttp import CQHttp
+from apscheduler.schedulers.blocking import BlockingScheduler
 
 """
 post出错时的response
@@ -104,6 +107,7 @@ def getList(id, page):
     base = '{{"ismore":{},"limit":{},"id":"{}","offset":{},"requestTime":{},"pf":"h5"}}'
     flag = False
     offset = 0
+    global dic
     while True:
         if flag:
             f = "true"
@@ -112,7 +116,7 @@ def getList(id, page):
         data = encodeData(base.format(f, page, id, offset, int(time.time() * 1000)))
         response = decodeData(requests.post(url=url, headers=header, data=data).text)["list"]
         for x in response:
-            dic[x['userid']] = [x['id'], x['money'], x['nick'], x['stime']]
+            dic[x['userid']] = [x['id'], float(x['money']), x['nick'], x['stime']]
         flag = len(response) == 15
         offset += page
         if flag == False:
@@ -121,26 +125,44 @@ def getList(id, page):
 
 
 def process(dic,last):
-    print(dic)
-    print(last)
     text=""
     for x in dic.keys():
         if x not in last.keys():
             text+="感谢"+dic[x][2]+"支持¥"+str(dic[x][1])+"元！\n"
         elif dic[x][1]>last[x][1]:
             text+="感谢"+dic[x][2]+"支持¥"+str(dic[x][1]-last[x][1])+"元！\n"
-    print(text)
     return text
+
+def block():
+    global dic
+    global last
+    text=process(dic,last)
+    dic=getList(1322,15)
+    last=copy.deepcopy(dic)
+    if text!="":
+        bot.send_group_msg(group_id=109378220,message=text)
+
+
+
 
 
 if __name__ == '__main__':
-    res = getInfo(1322)
-    print(res)
     last={}
-    while 1:
-        dic=getList(1322,15)
-        process(dic,last)
-        last=dic
-        time.sleep(60)
+    dic=getList(1322,15) # initial dic,last
+
+    bot = CQHttp(api_root='http://127.0.0.1:5700/', access_token='lovely|teemo', secret='lovely|teemo')
+    second=60
+    schedule=BlockingScheduler()
+    schedule.add_job(block,'interval',seconds=second)
+    schedule.start()
+
+    # res = getInfo(1322)
+    # print(res)
+    # last={}
+    # while 1:
+    #     dic=getList(1322,15)
+    #     process(dic,last)
+    #     last=copy.deepcopy(dic) # 这里注意=即直接赋值是浅拷贝，list这种可变对象拷贝的时候拷贝的是id，所以last和dic实际上是一样的，换成深拷贝就好了
+    #     time.sleep(60)
 
 
