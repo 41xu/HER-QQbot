@@ -1,0 +1,23 @@
+"""
+post出错时的response
+{'code': 'id', 'msg': '参数id应该大于1.'}
+"""
+
+"""
+config:{'requestTime': 1584453397313, 'pf': 'h5'}, url: https://www.tao-ba.club/config -> response null
+detail:{'id': '1322', 'requestTime': 1584453397381, 'pf': 'h5'}, url: https://www.tao-ba.club/idols/detail
+buystates:{'yyaid': '1322', 'requestTime': 1584453397489, 'pf': 'h5'}, url: https://www.tao-ba.club/idols/join/buystats -> resoponse null
+join:{'ismore': False, 'limit': 15, 'id': '1322', 'offset': 0, 'requestTime': 1584457188679, 'pf': 'h5'}, url: https://www.tao-ba.club/idols/join
+"""
+
+"""
+detail: return project info
+data:{'id': '1322', 'requestTime': 1584453397381, 'pf': 'h5'}, url: https://www.tao-ba.club/idols/detail
+response.content -> byte type
+"""
+
+"""
+join:{'ismore': False, 'limit': 15, 'id': '1322', 'offset': 0, 'requestTime': 1584457188679, 'pf': 'h5'}
+url: https://www.tao-ba.club/idols/join
+page: limit num in per page
+"""

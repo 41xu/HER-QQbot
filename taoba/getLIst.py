@@ -4,20 +4,9 @@ import json
 import base64
 import time
 import copy
+import random
 from cqhttp import CQHttp
 from apscheduler.schedulers.blocking import BlockingScheduler
-
-"""
-post出错时的response
-{'code': 'id', 'msg': '参数id应该大于1.'}
-"""
-
-"""
-config:{'requestTime': 1584453397313, 'pf': 'h5'}, url: https://www.tao-ba.club/config -> response null
-detail:{'id': '1322', 'requestTime': 1584453397381, 'pf': 'h5'}, url: https://www.tao-ba.club/idols/detail
-buystates:{'yyaid': '1322', 'requestTime': 1584453397489, 'pf': 'h5'}, url: https://www.tao-ba.club/idols/join/buystats -> resoponse null
-join:{'ismore': False, 'limit': 15, 'id': '1322', 'offset': 0, 'requestTime': 1584457188679, 'pf': 'h5'}, url: https://www.tao-ba.club/idols/join
-"""
 
 
 def addSalt(ori: bytearray):
@@ -75,32 +64,36 @@ cookie = {
     'l10n': 'zh-cn',
 }
 
-"""
-detail: return project info
-data:{'id': '1322', 'requestTime': 1584453397381, 'pf': 'h5'}, url: https://www.tao-ba.club/idols/detail
-response.content -> byte type
-"""
+
+# 读取配置文件
+def config():
+    with open("config.json", 'r') as f:
+        conf = json.load(f)
+    proj_id = conf['project_id']
+    page = conf['page']
+    nick = conf['nick']
+    text = conf['text']
+    target = conf['target']
+    return proj_id, page, nick, text, target
 
 
-def getInfo(id):
+def getInfo(id, target):
     url = "https://www.tao-ba.club/idols/detail"
     data = '{{"id": "{}", "requestTime": {}, "pf": "h5"}}'.format(id, int(time.time() * 1000))
     data = encodeData(data)
     response = requests.post(url=url, headers=header, data=data, cookies=cookie)
     response = decodeData(response.text)
-    # res+=response['datas']['title']+str(response['datas']['sellstats'])+str(response['datas']['donation'])
-    res = response['datas']['title'] + " 当前集资金额：¥" + str(response['datas']['donation']) + "\n"
-    return res
+    cur_money = response['datas']['donation']
+    res = response['datas']['title'] + " 目前已筹：¥" + str(cur_money) + "，目标金额：¥" + str(target) + "集资进度：" + str(
+        cur_money / target * 100) + "%\n"
+    res += "集资链接：https://www.tao-ba.club/#/pages/idols/detail?id={}" + id
+    return res, cur_money
 
 
-"""
-join:{'ismore': False, 'limit': 15, 'id': '1322', 'offset': 0, 'requestTime': 1584457188679, 'pf': 'h5'}
-url: https://www.tao-ba.club/idols/join
-page: limit num in per page
-"""
-page = 20
+page = 15
 total = {}  # user id->money
 dic = {}  # user info
+
 
 def getList(id, page):
     url = "https://www.tao-ba.club/idols/join"
@@ -124,37 +117,54 @@ def getList(id, page):
     return dic
 
 
-def process(dic,last):
-    text=""
+def random_callback(text):
+    i = random.randint(0, len(text) - 1)
+    return text[i]
+
+
+def process(dic, last, cur_money, nick,text):
+    total_number = len(dic)
+    res = ""
     for x in dic.keys():
         if x not in last.keys():
-            text+="感谢"+dic[x][2]+"支持¥"+str(dic[x][1])+"元！\n"
-        elif dic[x][1]>last[x][1]:
-            text+="感谢"+dic[x][2]+"支持¥"+str(dic[x][1]-last[x][1])+"元！\n"
-    return text
+            res += "感谢【" + dic[x][2] + "】" + random_callback(nick) + "支持 ¥" + str(dic[x][1]) + "元！\n"
+        elif dic[x][1] > last[x][1]:
+            res += "感谢【" + dic[x][2] + "】" + random_callback(nick) + "支持 ¥" + str(dic[x][1] - last[x][1]) + "元！\n"
+        res+=random_callback(text)+"\n"
+        res+="【"+dic[x][2]+"】"+"目前支持的总金额为：¥"+str(dic[x][1])+"元\n"
+    res+=str(total_number)+"人参与，人均¥"+str(cur_money/total_number)+"元\n"
+    return res
 
-def block():
+
+def block(proj_id, page, target,nick,text):
     global dic
     global last
-    text=process(dic,last)
-    dic=getList(1322,15)
-    last=copy.deepcopy(dic)
+    info, cur_money = getInfo(proj_id, target)
+    res = process(dic, last, cur_money,nick,text)
+
+    dic = getList(proj_id, page)
+    last = copy.deepcopy(dic)
+
     if text!="":
-        bot.send_group_msg(group_id=109378220,message=text)
+    bot.send_group_msg(group_id=109378220,message=res+info)
 
-
-
+    with open('list_data.json', 'w') as f:
+        json.dump(last, f)
+        f.write('\n')
 
 
 if __name__ == '__main__':
+    proj_id, page, nick, text, target = config()
+
     last={}
-    dic=getList(1322,15) # initial dic,last
+    dic=getList(proj_id,page) # initial dic,last
 
     bot = CQHttp(api_root='http://127.0.0.1:5700/', access_token='lovely|teemo', secret='lovely|teemo')
     second=60
     schedule=BlockingScheduler()
-    schedule.add_job(block,'interval',seconds=second)
+    schedule.add_job(block,'interval',seconds=second,args=[proj_id,page,target,nick,text])
     schedule.start()
+
 
     # res = getInfo(1322)
     # print(res)
@@ -162,7 +172,9 @@ if __name__ == '__main__':
     # while 1:
     #     dic=getList(1322,15)
     #     process(dic,last)
-    #     last=copy.deepcopy(dic) # 这里注意=即直接赋值是浅拷贝，list这种可变对象拷贝的时候拷贝的是id，所以last和dic实际上是一样的，换成深拷贝就好了
+    #     last=copy.deepcopy(dic)
+    #     with open('list_data.json','w') as f:
+    #         json.dump(last,f)
+    #         f.write('\n')
+    #     # 这里注意=即直接赋值是浅拷贝，list这种可变对象拷贝的时候拷贝的是id，所以last和dic实际上是一样的，换成深拷贝就好了
     #     time.sleep(60)
-
-
