@@ -67,7 +67,7 @@ cookie = {
 
 # 读取配置文件
 def config():
-    with open("config.json", 'r') as f:
+    with open("config.json", 'r', encoding='utf-8') as f:
         conf = json.load(f)
     proj_id = conf['project_id']
     page = conf['page']
@@ -86,7 +86,7 @@ def getInfo(id, target):
     cur_money = response['datas']['donation']
     res = response['datas']['title'] + " 目前已筹：¥" + str(cur_money) + "，目标金额：¥" + str(target) + "集资进度：" + str(
         cur_money / target * 100) + "%\n"
-    res += "集资链接：https://www.tao-ba.club/#/pages/idols/detail?id={}" + id
+    res += "集资链接：https://www.tao-ba.club/#/pages/idols/detail?id=" + str(id)
     return res, cur_money
 
 
@@ -122,49 +122,56 @@ def random_callback(text):
     return text[i]
 
 
-def process(dic, last, cur_money, nick,text):
+def process(dic, last, cur_money, nick, text):
     total_number = len(dic)
     res = ""
+    flag = 0
     for x in dic.keys():
         if x not in last.keys():
-            res += "感谢【" + dic[x][2] + "】" + random_callback(nick) + "支持 ¥" + str(dic[x][1]) + "元！\n"
+            flag = 1
+            res += "感谢 " + dic[x][2] + random_callback(nick) + "支持 ¥" + str(dic[x][1]) + "元！\n"
         elif dic[x][1] > last[x][1]:
-            res += "感谢【" + dic[x][2] + "】" + random_callback(nick) + "支持 ¥" + str(dic[x][1] - last[x][1]) + "元！\n"
-        res+=random_callback(text)+"\n"
-        res+="【"+dic[x][2]+"】"+"目前支持的总金额为：¥"+str(dic[x][1])+"元\n"
-    res+=str(total_number)+"人参与，人均¥"+str(cur_money/total_number)+"元\n"
+            flag = 1
+            res += "感谢 " + dic[x][2] + random_callback(nick) + "支持 ¥" + str(dic[x][1] - last[x][1]) + "元！\n"
+        else:
+            continue
+        res += random_callback(text) + "\n"
+        res += "【" + dic[x][2] + "】" + "目前支持的总金额为：¥" + str(dic[x][1]) + "元\n"
+    if flag != 0:
+        ave = cur_money / total_number
+        res += str(total_number) + "人参与，人均¥" + str('%.2f' % ave) + "元\n"
+    else:
+        res = ""
     return res
 
 
-def block(proj_id, page, target,nick,text):
-    global dic
-    global last
-    info, cur_money = getInfo(proj_id, target)
-    res = process(dic, last, cur_money,nick,text)
-
+def block(proj_id, page, target, nick, text):
     dic = getList(proj_id, page)
-    last = copy.deepcopy(dic)
+    with open('last_data.json', 'r', encoding='utf-8') as f:
+        last = json.load(f)
 
-    if text!="":
-    bot.send_group_msg(group_id=109378220,message=res+info)
+    info, cur_money = getInfo(proj_id, target)
+    res = process(dic, last, cur_money, nick, text)
 
-    with open('list_data.json', 'w') as f:
-        json.dump(last, f)
+    if res != "":
+        bot.send_group_msg(group_id=109378220, message=res + info)
+
+    with open('last_data.json', 'w') as f:
+        json.dump(dic, f)
         f.write('\n')
 
 
 if __name__ == '__main__':
     proj_id, page, nick, text, target = config()
 
-    last={}
-    dic=getList(proj_id,page) # initial dic,last
+    # last={}
+    # dic=getList(proj_id,page) # initial dic,last
 
     bot = CQHttp(api_root='http://127.0.0.1:5700/', access_token='lovely|teemo', secret='lovely|teemo')
-    second=60
-    schedule=BlockingScheduler()
-    schedule.add_job(block,'interval',seconds=second,args=[proj_id,page,target,nick,text])
+    second = 30
+    schedule = BlockingScheduler()
+    schedule.add_job(block, 'interval', seconds=second, args=[proj_id, page, target, nick, text])
     schedule.start()
-
 
     # res = getInfo(1322)
     # print(res)

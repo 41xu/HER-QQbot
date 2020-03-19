@@ -20,4 +20,4 @@ response.content -> byte type
 join:{'ismore': False, 'limit': 15, 'id': '1322', 'offset': 0, 'requestTime': 1584457188679, 'pf': 'h5'}
 url: https://www.tao-ba.club/idols/join
 page: limit num in per page
-"""
+""
