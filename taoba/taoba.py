@@ -84,8 +84,9 @@ def getInfo(id, target):
     response = requests.post(url=url, headers=header, data=data, cookies=cookie)
     response = decodeData(response.text)
     cur_money = response['datas']['donation']
+    t = float(cur_money / target * 100)
     res = response['datas']['title'] + " 目前已筹：¥" + str(cur_money) + "，目标金额：¥" + str(target) + "集资进度：" + str(
-        cur_money / target * 100) + "%\n"
+        '%.2f'% t) + "%\n"
     res += "集资链接：https://www.tao-ba.club/#/pages/idols/detail?id=" + str(id)
     return res, cur_money
 
@@ -124,9 +125,12 @@ def random_callback(text):
 
 def process(dic, last, cur_money, nick, text):
     total_number = len(dic)
-    res = ""
+    ret=[]
+    ave = cur_money / total_number
+    tmp=str(total_number) + "人参与，人均¥" + str('%.2f' % ave) + "元\n"
     flag = 0
     for x in dic.keys():
+        res=""
         if x not in last.keys():
             flag = 1
             res += "感谢 " + dic[x][2] + random_callback(nick) + "支持 ¥" + str(dic[x][1]) + "元！\n"
@@ -137,24 +141,28 @@ def process(dic, last, cur_money, nick, text):
             continue
         res += random_callback(text) + "\n"
         res += "【" + dic[x][2] + "】" + "目前支持的总金额为：¥" + str(dic[x][1]) + "元\n"
-    if flag != 0:
-        ave = cur_money / total_number
-        res += str(total_number) + "人参与，人均¥" + str('%.2f' % ave) + "元\n"
-    else:
-        res = ""
-    return res
+        res += tmp
+        ret.append(res)
+
+    if flag==0:
+        ret=[]
+    return ret
 
 
 def block(proj_id, page, target, nick, text):
     dic = getList(proj_id, page)
-    with open('last_data.json', 'r', encoding='utf-8') as f:
-        last = json.load(f)
+    try:
+        with open('last_data.json', 'r', encoding='utf-8') as f:
+            last = json.load(f)
+    except:
+        last = {}
 
     info, cur_money = getInfo(proj_id, target)
     res = process(dic, last, cur_money, nick, text)
 
-    if res != "":
-        bot.send_group_msg(group_id=109378220, message=res + info)
+    if res != []:
+        for x in res:
+            bot.send_group_msg(group_id=109378220, message=x + info)
 
     with open('last_data.json', 'w') as f:
         json.dump(dic, f)
