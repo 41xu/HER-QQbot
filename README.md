@@ -1,5 +1,6 @@
 # SNH48 Group's QQ bot
 Some function based on CoolQ bot, for SNH48 Group.
+**因目前暂时没有需求，项目暂时不维护了，如有问题欢迎提issue或者pull requests**
 
 > BEJ48-黄恩茹的相关 👏🏾477218146👏🏾欢迎加入黄恩茹应援群！
 
