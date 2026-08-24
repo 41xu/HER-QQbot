@@ -98,7 +98,7 @@ dic = {}  # user info
 
 def getList(id, page):
     url = "https://www.tao-ba.club/idols/join"
-    base = '{{"ismore":{},"limit":{},"id":"{}","offset":{},"requestTime":{},"pf":"h5"}}'
+    base = '{{"ismore":{},"limit":{},"id":"{}","offset":{},"requestTime":{},"pf":"h5","sort":"total"}}'
     flag = False
     offset = 0
     global dic
@@ -110,7 +110,7 @@ def getList(id, page):
         data = encodeData(base.format(f, page, id, offset, int(time.time() * 1000)))
         response = decodeData(requests.post(url=url, headers=header, data=data).text)["list"]
         for x in response:
-            dic[x['userid']] = [x['id'], float(x['money']), x['nick'], x['stime']]
+            dic[x['userid']] = [x['id'], float(x.get('total_money', x['money'])), x['nick'], x['stime']]
         flag = len(response) == 15
         offset += page
         if flag == False:
